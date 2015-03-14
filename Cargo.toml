@@ -1,0 +1,8 @@
+[package]
+name = "cylonn"
+version = "0.0.1"
+authors = ["Simon Bernier St-Pierre <sbernierstpierre@gmail.com>"]
+
+[[bin]]
+name = "cylonnd"
+path = "src/main.rs"
