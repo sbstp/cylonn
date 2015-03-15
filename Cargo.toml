@@ -1,7 +1,10 @@
 [package]
 name = "cylonn"
 version = "0.0.1"
-authors = ["Simon Bernier St-Pierre <sbernierstpierre@gmail.com>"]
+authors = [
+    "Alexandre Gagnon <alxgnon@gmail.com>",
+    "Simon Bernier St-Pierre <sbernierstpierre@gmail.com>",
+]
 
 [[bin]]
 name = "cylonnd"
