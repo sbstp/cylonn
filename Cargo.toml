@@ -11,7 +11,7 @@ name = "cylonnd"
 path = "src/main.rs"
 
 [dependencies]
-regex = "0.1.19"
-regex_macros = "0.1.12"
-rustc-serialize = "0.3.3"
-uuid = "0.1.11"
+regex = "*"
+regex_macros = "*"
+rustc-serialize = "*"
+uuid = "*"
