@@ -5,6 +5,8 @@
 use std::old_io::BufferedStream;
 use std::old_io::{Acceptor, Listener};
 use std::old_io::net::pipe::{UnixListener, UnixStream};
+use std::old_io::timer::sleep;
+use std::time::duration::Duration;
 use std::thread;
 
 use uuid::Uuid;
@@ -21,7 +23,15 @@ fn handle_stream(mut stream: UnixStream) {
 
 fn main() {
     let path = format!("/tmp/{}.sock", Uuid::new_v4().to_simple_string());
-    let sock = UnixListener::bind(path).unwrap();
+    let sock = UnixListener::bind(path.as_slice()).unwrap();
+
+    let mut plugins = plugin::read_init(&Path::new("init")).unwrap();
+    for p in plugins.iter_mut() {
+        if let Err(ref err) = p.load(path.as_slice()) {
+            println!("{}", err);
+        }
+    }
+
     let mut acceptor = sock.listen().unwrap();
 
     loop {
