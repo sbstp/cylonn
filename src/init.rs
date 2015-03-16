@@ -1,6 +1,6 @@
 use std::error;
 use std::fmt;
-use std::old_io::{BufferedReader, File, IoError, IoResult};
+use std::old_io::{BufferedReader, File, IoError, IoErrorKind};
 
 use plugin::Plugin;
 
@@ -90,10 +90,16 @@ pub fn read_init(path: &Path) -> Result<Vec<Plugin>, ReadError> {
     let file = try!(File::open(path));
     let mut reader = BufferedReader::new(file);
     let mut line_no = 0;
-    while let Ok(ref line) = reader.read_line() {
+    loop {
         line_no += 1;
-        if let Some(plugin) = try!(parse_line(line_no, line)) {
-            plugins.push(plugin);
+        match reader.read_line() {
+            Ok(ref line) => {
+                if let Some(plugin) = try!(parse_line(line_no, line)) {
+                    plugins.push(plugin);
+                }
+            },
+            Err(ref err) if err.kind == IoErrorKind::EndOfFile => break,
+            Err(ref err) => return Err(error::FromError::from_error(err.clone())),
         }
     }
     Ok(plugins)
