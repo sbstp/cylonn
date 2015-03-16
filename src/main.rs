@@ -1,5 +1,5 @@
 #![feature(old_io, old_path, plugin)]
-#![allow(deprecated)]
+#![allow(dead_code, deprecated)]
 #![plugin(regex_macros)]
 
 use std::old_io::BufferedStream;
