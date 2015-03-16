@@ -1,12 +1,10 @@
-#![feature(old_io, old_path, plugin)]
+#![feature(old_io, old_path)]
+#![feature(plugin)]
 #![allow(dead_code, deprecated)]
 
 use std::old_io::BufferedStream;
 use std::old_io::{Acceptor, Listener};
 use std::old_io::net::pipe::{UnixListener, UnixStream};
-use std::old_io::timer::sleep;
-use std::old_io::IoResult;
-use std::time::duration::Duration;
 use std::thread;
 use std::sync::mpsc::{self, Sender};
 
@@ -25,6 +23,7 @@ enum Event {
 
 fn handle(sock: UnixStream, sender: Sender<Event>) {
     let mut reader = BufferedStream::new(sock.clone());
+    // TODO: use Result of send() call
     sender.send(Event::Stream(sock.clone()));
 
     while let Ok(line) = reader.read_line() {
@@ -34,7 +33,7 @@ fn handle(sock: UnixStream, sender: Sender<Event>) {
 }
 
 fn accept(path: String, sender: Sender<Event>) {
-    let listener = UnixListener::bind(path.as_slice()).unwrap();
+    let listener = UnixListener::bind(&path[..]).unwrap();
     let mut acceptor = listener.listen().unwrap();
 
     while let Ok(sock) = acceptor.accept() {
@@ -70,7 +69,7 @@ fn main() {
 
     // Launch the plugins.
     for p in plugins.iter_mut() {
-        if let Err(ref err) = p.load(path.as_slice()) {
+        if let Err(ref err) = p.load(&path[..]) {
             println!("{}", err);
         }
     }
