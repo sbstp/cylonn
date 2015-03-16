@@ -63,7 +63,10 @@ fn main() {
 
 
     // Read the plugins from the init file.
-    let mut plugins = init::read_init(&Path::new("init")).unwrap();
+    let mut plugins = match init::read_init(&Path::new("init")) {
+        Ok(plugins) => plugins,
+        Err(err) => panic!("{}", err),
+    };
 
     // Launch the plugins.
     for p in plugins.iter_mut() {

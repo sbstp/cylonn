@@ -21,7 +21,6 @@ impl fmt::Debug for Plugin {
 }
 
 impl Plugin {
-
     pub fn new(name: &str, cmd: &str) -> Plugin {
         Plugin{
             name: name.to_string(),
