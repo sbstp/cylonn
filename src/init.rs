@@ -50,7 +50,7 @@ impl error::FromError<SyntaxError> for ReadError {
 
 fn parse_line<'a>(line: &'a str) -> Result<Option<Plugin>, SyntaxError> {
     let ln = line.trim();
-    if ln.starts_with('#') {
+    if ln.is_empty() || ln.starts_with('#') {
         Ok(None)
     } else {
         match ln.find(':') {
@@ -107,10 +107,26 @@ fn test_parse_line_comment_spacey() {
 }
 
 #[test]
+fn test_parse_line_empty() {
+    assert!(parse_line("").unwrap().is_none());
+}
+
+#[test]
+fn test_parse_line_empty_spacey() {
+    assert!(parse_line("    ").unwrap().is_none());
+}
+
+#[test]
 fn test_parse_line_hash_name() {
     let plugin = parse_line("hash#: this is valid").unwrap().unwrap();
     assert_eq!(plugin.name, "hash#");
     assert_eq!(plugin.cmd, "this is valid");
+}
+
+#[test]
+fn test_parse_line_err_no_colon() {
+    assert_eq!(parse_line("I AM ERROR").unwrap_err(),
+               SyntaxError::NoColon);
 }
 
 #[test]
