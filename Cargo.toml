@@ -11,7 +11,5 @@ name = "cylonnd"
 path = "src/main.rs"
 
 [dependencies]
-regex = "*"
-regex_macros = "*"
 rustc-serialize = "*"
 uuid = "*"

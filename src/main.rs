@@ -1,6 +1,5 @@
 #![feature(old_io, old_path, plugin)]
 #![allow(dead_code, deprecated)]
-#![plugin(regex_macros)]
 
 use std::old_io::BufferedStream;
 use std::old_io::{Acceptor, Listener};
@@ -11,7 +10,6 @@ use std::thread;
 
 use uuid::Uuid;
 
-extern crate regex;
 extern crate "rustc-serialize" as serialize;
 extern crate uuid;
 
