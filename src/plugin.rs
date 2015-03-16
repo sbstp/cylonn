@@ -48,9 +48,18 @@ impl Plugin {
     }
 }
 
-fn read_line<'a>(line: &'a str) -> Option<Captures<'a>> {
+fn parse_line<'a>(line: &'a str) -> Option<(&'a str, &'a str)> {
     static RE_LINE: Regex = regex!(r"^\s*([^#\s]+)\s*:\s*([^#\r\n]+)\s*$");
-    RE_LINE.captures(line)
+
+    match RE_LINE.captures(line) {
+        Some(cap) => {
+            match (cap.at(1), cap.at(2)) {
+                (Some(name), Some(cmd)) => Some((name, cmd)),
+                _ => None,
+            }
+        },
+        _ => None,
+    }
 }
 
 pub fn read_init(path: &Path) -> IoResult<Vec<Plugin>> {
@@ -58,10 +67,8 @@ pub fn read_init(path: &Path) -> IoResult<Vec<Plugin>> {
     let file = try!(File::open(path));
     let mut reader = BufferedReader::new(file);
     while let Ok(ref line) = reader.read_line() {
-        if let Some(cap) = read_line(line) {
-            if let (Some(name), Some(cmd)) = (cap.at(1), cap.at(2)) {
-                plugins.push(Plugin::new(name, cmd));
-            }
+        if let Some((name, cmd)) = parse_line(line) {
+            plugins.push(Plugin::new(name, cmd));
         }
     }
     Ok(plugins)
