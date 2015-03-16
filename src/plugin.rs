@@ -49,7 +49,7 @@ impl Plugin {
 }
 
 fn parse_line<'a>(line: &'a str) -> Option<(&'a str, &'a str)> {
-    static RE_LINE: Regex = regex!(r"^\s*([^#\s]+)\s*:\s*([^#\r\n]+)\s*$");
+    static RE_LINE: Regex = regex!(r"^\s*([^#\s]+)\s*:\s*((\s*[^#\s]+)+)\s*$");
 
     match RE_LINE.captures(line) {
         Some(cap) => {
@@ -72,4 +72,22 @@ pub fn read_init(path: &Path) -> IoResult<Vec<Plugin>> {
         }
     }
     Ok(plugins)
+}
+
+#[test]
+fn test_parse_line() {
+    assert_eq!(parse_line("test: run -a script"),
+               Some(("test", "run -a script")));
+}
+
+#[test]
+fn test_parse_line_trim() {
+    assert_eq!(parse_line("  test  :   run -a script  "),
+               Some(("test", "run -a script")));
+}
+
+#[test]
+fn test_parse_line_comment() {
+    assert_eq!(parse_line("# don't run -a script"),
+               None);
 }
