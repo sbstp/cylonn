@@ -2,6 +2,11 @@ use std::old_io::{BufferedReader, File, IoResult};
 
 use plugin::Plugin;
 
+// Syntax error messages
+static ERR_NOCOLON: &'static str = "No colon delimiter found";
+static ERR_NONAME: &'static str = "Plugin has no name";
+static ERR_NOCMD: &'static str = "Plugin has no command";
+
 #[derive(Debug, PartialEq)]
 enum Line<'a> {
     Comment,
@@ -15,14 +20,14 @@ fn parse_line<'a>(line: &'a str) -> Line {
         Line::Comment
     } else {
         match ln.find(':') {
-            None => Line::SyntaxError("No colon delimiter found"),
+            None => Line::SyntaxError(ERR_NOCOLON),
             Some(i) => {
                 let name = ln[..i].trim();
                 let cmd = ln[i+1..].trim();
                 if name.is_empty() {
-                    Line::SyntaxError("Plugin has no name")
+                    Line::SyntaxError(ERR_NONAME)
                 } else if cmd.is_empty() {
-                    Line::SyntaxError("Plugin has no command")
+                    Line::SyntaxError(ERR_NOCMD)
                 } else {
                     Line::Plugin(name, cmd)
                 }
@@ -36,6 +41,7 @@ pub fn read_init(path: &Path) -> IoResult<Vec<Plugin>> {
     let file = try!(File::open(path));
     let mut reader = BufferedReader::new(file);
     while let Ok(ref line) = reader.read_line() {
+        // TODO: handle syntax error case
         if let Line::Plugin(name, cmd) = parse_line(line) {
             plugins.push(Plugin::new(name, cmd));
         }
@@ -76,23 +82,23 @@ fn test_parse_line_hash_name() {
 #[test]
 fn test_parse_line_err_no_name() {
     assert_eq!(parse_line(": cat /dev/null"),
-               Line::SyntaxError("Plugin has no name"));
+               Line::SyntaxError(ERR_NONAME));
 }
 
 #[test]
 fn test_parse_line_err_no_name_spacey() {
     assert_eq!(parse_line("  :  cat /dev/null   "),
-               Line::SyntaxError("Plugin has no name"));
+               Line::SyntaxError(ERR_NONAME));
 }
 
 #[test]
 fn test_parse_line_no_cmd() {
     assert_eq!(parse_line("nothing:"),
-               Line::SyntaxError("Plugin has no command"));
+               Line::SyntaxError(ERR_NOCMD));
 }
 
 #[test]
 fn test_parse_line_no_cmd_spacey() {
     assert_eq!(parse_line("   nothing:  "),
-               Line::SyntaxError("Plugin has no command"));
+               Line::SyntaxError(ERR_NOCMD));
 }
