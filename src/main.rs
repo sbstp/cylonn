@@ -24,7 +24,11 @@ fn main() {
     let path = format!("/tmp/{}.sock", Uuid::new_v4().to_simple_string());
     let sock = UnixListener::bind(path.as_slice()).unwrap();
 
-    let mut plugins = init::read_init(&Path::new("init")).unwrap();
+    let mut plugins = match init::read_init(&Path::new("init")) {
+        Ok(plugins) => plugins,
+        Err(err) => panic!("{}", err),
+    };
+
     for p in plugins.iter_mut() {
         if let Err(ref err) = p.load(path.as_slice()) {
             println!("{}", err);
