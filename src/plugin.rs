@@ -1,3 +1,4 @@
+use std::fmt;
 use std::old_io::{Command, IoResult, Process};
 use std::old_io::process::StdioContainer;
 
@@ -6,6 +7,17 @@ pub struct Plugin {
     pub cmd: String,
     pub running: bool,
     procc: Option<Process>,
+}
+
+impl fmt::Debug for Plugin {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        // Same as derive(Debug), but without procc
+        write!(f,
+               "Plugin {{ name: {}, cmd: {}, running: {} }}",
+               self.name,
+               self.cmd,
+               self.running)
+    }
 }
 
 impl Plugin {
