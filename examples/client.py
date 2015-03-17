@@ -7,3 +7,5 @@ so.connect(sys.argv[1])
 file = so.makefile('rw')
 file.write('HELLO\n')
 file.flush()
+
+print(file.readline())
