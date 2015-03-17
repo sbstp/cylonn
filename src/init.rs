@@ -60,7 +60,7 @@ impl error::FromError<SyntaxError> for ReadError {
     }
 }
 
-fn parse_line<'a>(line_no: u32, line: &'a str) -> Result<Option<Plugin>, SyntaxError> {
+fn parse_line(line_no: u32, line: &str) -> Result<Option<Plugin>, SyntaxError> {
     let ln = line.trim();
     if ln.is_empty() || ln.starts_with('#') {
         Ok(None)
