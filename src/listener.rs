@@ -52,7 +52,6 @@ fn handle(id: u32, sock: UnixStream, sender: Sender<Message>) {
 
     // TODO: handle errors
     while let Ok(line) = reader.read_line() {
-        println!("new line");
         // TODO: use Result of send() call
         sender.send(builder.line(line));
     }
