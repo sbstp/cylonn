@@ -2,6 +2,7 @@
 #![feature(plugin)]
 #![allow(dead_code, deprecated)]
 
+use std::collections::HashMap;
 use std::old_io::BufferedStream;
 use std::old_io::{Acceptor, Listener};
 use std::old_io::net::pipe::{UnixListener, UnixStream};
@@ -17,31 +18,32 @@ mod init;
 mod plugin;
 
 enum Event {
-    Line(String),
-    Stream(UnixStream),
+    Line(u32, String),
+    Stream(u32, UnixStream),
 }
 
-fn handle(sock: UnixStream, sender: Sender<Event>) {
+fn handle(id: u32, sock: UnixStream, sender: Sender<Event>) {
     let mut reader = BufferedStream::new(sock.clone());
     // TODO: use Result of send() call
-    sender.send(Event::Stream(sock.clone()));
+    sender.send(Event::Stream(id, sock.clone()));
 
     while let Ok(line) = reader.read_line() {
         println!("new line");
-        sender.send(Event::Line(line));
+        sender.send(Event::Line(id, line));
     }
 }
 
 fn accept(path: String, sender: Sender<Event>) {
     let listener = UnixListener::bind(&path[..]).unwrap();
     let mut acceptor = listener.listen().unwrap();
+    let mut client_id = 0u32;
 
     while let Ok(sock) = acceptor.accept() {
-        println!("new client");
         let s = sender.clone();
         thread::spawn(move || {
-            handle(sock, s);
+            handle(client_id, sock, s);
         });
+        client_id += 1;
     }
 }
 
@@ -75,15 +77,15 @@ fn main() {
     }
 
     // List of streams.
-    let mut streams = Vec::new();
+    let mut streams = HashMap::new();
 
     // Await for events.
     while let Ok(event) = receiver.recv() {
         match event {
-            Event::Line(line) => println!("{}", line),
-            Event::Stream(stream) => {
-                println!("stream received");
-                streams.push(stream);
+            Event::Line(id, line) => println!("{}: {}", id, line),
+            Event::Stream(id, stream) => {
+                println!("{}: stream received", id);
+                streams.insert(id, stream);
             }
         }
     }
