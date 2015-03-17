@@ -1,2 +1,3 @@
 # comment
 test: python examples/client.py
+test2: python examples/client.py
