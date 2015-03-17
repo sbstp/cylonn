@@ -3,55 +3,21 @@
 #![allow(dead_code, deprecated)]
 
 use std::collections::HashMap;
-use std::old_io::{BufferedReader, BufferedWriter};
-use std::old_io::{Acceptor, Listener};
-use std::old_io::net::pipe::{UnixListener, UnixStream};
-use std::thread;
-use std::sync::mpsc::{self, Sender};
+use std::old_io::BufferedWriter;
+use std::old_io::net::pipe::UnixStream;
 
-use uuid::Uuid;
+use listener::Event;
 
 extern crate "rustc-serialize" as serialize;
 extern crate uuid;
 
 mod init;
+mod listener;
 mod plugin;
 
-struct Builder {
-    client_id: u32,
-}
 
-impl Builder {
-
-    fn new(client_id: u32) -> Self {
-        Builder { client_id: client_id }
-    }
-
-    fn message(&self, event: Event) -> Message {
-        Message { client_id: self.client_id, event: event }
-    }
-
-    fn line(&self, line: String) -> Message {
-        Message { client_id: self.client_id, event: Event::Line(line) }
-    }
-
-    fn stream(&self, stream: UnixStream) -> Message {
-        Message { client_id: self.client_id, event: Event::Stream(stream) }
-    }
-
-}
-
-struct Message {
-    client_id: u32,
-    event: Event,
-}
-
-enum Event {
-    Line(String),
-    Stream(UnixStream),
-}
-
-struct Client {
+/// Represents a remotely connected client.
+pub struct Client {
     client_id: u32,
     writer: BufferedWriter<UnixStream>,
     // TODO: plugin
@@ -59,7 +25,7 @@ struct Client {
 
 impl Client {
 
-    fn new(client_id: u32, stream: UnixStream) -> Self {
+    pub fn new(client_id: u32, stream: UnixStream) -> Self {
         Client {
             client_id: client_id,
             writer: BufferedWriter::new(stream),
@@ -68,49 +34,9 @@ impl Client {
 
 }
 
-fn handle(id: u32, sock: UnixStream, sender: Sender<Message>) {
-    let builder = Builder::new(id);
-    let mut reader = BufferedReader::new(sock.clone());
-    // TODO: use Result of send() call
-    sender.send(builder.stream(sock.clone()));
-
-    // TODO: handle errors
-    while let Ok(line) = reader.read_line() {
-        println!("new line");
-        sender.send(builder.line(line));
-    }
-}
-
-fn accept(path: String, sender: Sender<Message>) {
-    let listener = UnixListener::bind(&path[..]).unwrap();
-    let mut acceptor = listener.listen().unwrap();
-    // Associate each client a unique id.
-    let mut client_id = 0u32;
-
-    while let Ok(sock) = acceptor.accept() {
-        let s = sender.clone();
-        thread::spawn(move || {
-            handle(client_id, sock, s);
-        });
-        client_id += 1;
-    }
-}
-
 fn main() {
     // Path of the UnixSocket.
-    let path = format!("/tmp/{}.sock", Uuid::new_v4().to_simple_string());
-    // Channel that send events.
-    let (sender, receiver) = mpsc::channel::<Message>();
-
-    // Create the server thread.
-    // It creates a UnixSocket and waits for connections.
-    {
-        let path = path.clone();
-        thread::spawn(move || {
-            accept(path, sender);
-        });
-    }
-
+    let (path, receiver) = listener::create();
 
     // Read the plugins from the init file.
     let mut plugins = match init::read_init(&Path::new("init")) {
