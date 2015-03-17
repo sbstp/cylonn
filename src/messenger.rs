@@ -37,6 +37,7 @@ pub fn broadcast(receiver: Receiver<Message>) {
                 for (client_id, client) in clients.iter_mut() {
                     // Do not broadcast the message to the sender.
                     if *client_id != message.client_id {
+                        // TODO: handle errors
                         client.writer.write_str(&line[..]);
                         client.writer.flush();
                     }
