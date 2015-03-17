@@ -1,5 +1,4 @@
 #![feature(old_io, old_path)]
-#![feature(plugin)]
 #![allow(dead_code, deprecated)]
 
 extern crate "rustc-serialize" as serialize;
