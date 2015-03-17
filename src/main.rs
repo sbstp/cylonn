@@ -3,7 +3,7 @@
 #![allow(dead_code, deprecated)]
 
 use std::collections::HashMap;
-use std::old_io::BufferedStream;
+use std::old_io::{BufferedReader, BufferedWriter};
 use std::old_io::{Acceptor, Listener};
 use std::old_io::net::pipe::{UnixListener, UnixStream};
 use std::thread;
@@ -51,9 +51,26 @@ enum Event {
     Stream(UnixStream),
 }
 
+struct Client {
+    client_id: u32,
+    writer: BufferedWriter<UnixStream>,
+    // TODO: plugin
+}
+
+impl Client {
+
+    fn new(client_id: u32, stream: UnixStream) -> Self {
+        Client {
+            client_id: client_id,
+            writer: BufferedWriter::new(stream),
+        }
+    }
+
+}
+
 fn handle(id: u32, sock: UnixStream, sender: Sender<Message>) {
     let builder = Builder::new(id);
-    let mut reader = BufferedStream::new(sock.clone());
+    let mut reader = BufferedReader::new(sock.clone());
     // TODO: use Result of send() call
     sender.send(builder.stream(sock.clone()));
 
@@ -108,17 +125,23 @@ fn main() {
         }
     }
 
-    // List of streams.
-    let mut streams = HashMap::new();
+    // List of clients.
+    let mut clients: HashMap<u32, Client> = HashMap::new();
 
     // Await for events.
     // TODO: handle errors
     while let Ok(message) = receiver.recv() {
         match message.event {
-            Event::Line(line) => println!("{}: {}", message.client_id, line),
+            Event::Line(line) => {
+                println!("{}: {}", message.client_id, line);
+                for (_, client) in clients.iter_mut() {
+                    client.writer.write_str(&line[..]);
+                    client.writer.flush();
+                }
+            }
             Event::Stream(stream) => {
                 println!("{}: stream received", message.client_id);
-                streams.insert(message.client_id, stream);
+                clients.insert(message.client_id, Client::new(message.client_id, stream));
             }
         }
     }
