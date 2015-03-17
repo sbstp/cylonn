@@ -17,25 +17,57 @@ extern crate uuid;
 mod init;
 mod plugin;
 
-enum Event {
-    Line(u32, String),
-    Stream(u32, UnixStream),
+struct Builder {
+    client_id: u32,
 }
 
-fn handle(id: u32, sock: UnixStream, sender: Sender<Event>) {
+impl Builder {
+
+    fn new(client_id: u32) -> Self {
+        Builder { client_id: client_id }
+    }
+
+    fn message(&self, event: Event) -> Message {
+        Message { client_id: self.client_id, event: event }
+    }
+
+    fn line(&self, line: String) -> Message {
+        Message { client_id: self.client_id, event: Event::Line(line) }
+    }
+
+    fn stream(&self, stream: UnixStream) -> Message {
+        Message { client_id: self.client_id, event: Event::Stream(stream) }
+    }
+
+}
+
+struct Message {
+    client_id: u32,
+    event: Event,
+}
+
+enum Event {
+    Line(String),
+    Stream(UnixStream),
+}
+
+fn handle(id: u32, sock: UnixStream, sender: Sender<Message>) {
+    let builder = Builder::new(id);
     let mut reader = BufferedStream::new(sock.clone());
     // TODO: use Result of send() call
-    sender.send(Event::Stream(id, sock.clone()));
+    sender.send(builder.stream(sock.clone()));
 
+    // TODO: handle errors
     while let Ok(line) = reader.read_line() {
         println!("new line");
-        sender.send(Event::Line(id, line));
+        sender.send(builder.line(line));
     }
 }
 
-fn accept(path: String, sender: Sender<Event>) {
+fn accept(path: String, sender: Sender<Message>) {
     let listener = UnixListener::bind(&path[..]).unwrap();
     let mut acceptor = listener.listen().unwrap();
+    // Associate each client a unique id.
     let mut client_id = 0u32;
 
     while let Ok(sock) = acceptor.accept() {
@@ -51,7 +83,7 @@ fn main() {
     // Path of the UnixSocket.
     let path = format!("/tmp/{}.sock", Uuid::new_v4().to_simple_string());
     // Channel that send events.
-    let (sender, receiver) = mpsc::channel::<Event>();
+    let (sender, receiver) = mpsc::channel::<Message>();
 
     // Create the server thread.
     // It creates a UnixSocket and waits for connections.
@@ -80,12 +112,13 @@ fn main() {
     let mut streams = HashMap::new();
 
     // Await for events.
-    while let Ok(event) = receiver.recv() {
-        match event {
-            Event::Line(id, line) => println!("{}: {}", id, line),
-            Event::Stream(id, stream) => {
-                println!("{}: stream received", id);
-                streams.insert(id, stream);
+    // TODO: handle errors
+    while let Ok(message) = receiver.recv() {
+        match message.event {
+            Event::Line(line) => println!("{}: {}", message.client_id, line),
+            Event::Stream(stream) => {
+                println!("{}: stream received", message.client_id);
+                streams.insert(message.client_id, stream);
             }
         }
     }
