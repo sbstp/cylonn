@@ -134,9 +134,12 @@ fn main() {
         match message.event {
             Event::Line(line) => {
                 println!("{}: {}", message.client_id, line);
-                for (_, client) in clients.iter_mut() {
-                    client.writer.write_str(&line[..]);
-                    client.writer.flush();
+                for (client_id, client) in clients.iter_mut() {
+                    // Do not broadcast the message to the sender.
+                    if *client_id != message.client_id {
+                        client.writer.write_str(&line[..]);
+                        client.writer.flush();
+                    }
                 }
             }
             Event::Stream(stream) => {
