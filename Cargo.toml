@@ -6,6 +6,12 @@ authors = [
     "Simon Bernier St-Pierre <sbernierstpierre@gmail.com>",
 ]
 
+[profile.release]
+opt-level = 3
+debug = false
+rpath = false
+lto = true
+
 [[bin]]
 name = "cylonnd"
 path = "src/main.rs"
