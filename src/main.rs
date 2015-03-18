@@ -1,12 +1,18 @@
 #![feature(old_io, old_path)]
+#![feature(collections)]
+#![feature(test)]
 #![allow(dead_code, deprecated)]
 
 extern crate "rustc-serialize" as serialize;
 extern crate uuid;
 
+#[cfg(test)]
+extern crate test;
+
 mod init;
 mod listener;
 mod messenger;
+mod matcher;
 mod plugin;
 
 fn main() {
