@@ -1,3 +1,5 @@
+use std::iter::Iterator;
+
 pub fn kind_matches(kind: &str, globs: &[&str]) -> bool {
     for glob in globs.iter() {
         if test_kind(kind, glob) {
@@ -7,12 +9,42 @@ pub fn kind_matches(kind: &str, globs: &[&str]) -> bool {
     false
 }
 
+/// This is a variant of `zip` that stops when both underlying iterators yield None.
+struct GreedyZip<'d, A, B> {
+    a: Box<Iterator<Item=A> + 'd>,
+    b: Box<Iterator<Item=B> + 'd>,
+}
+
+impl<'d, A, B> GreedyZip<'d, A, B> {
+
+    fn new<'e, IA, IB>(a: IA, b: IB) -> GreedyZip<'e, A, B>
+            where IA: Iterator<Item=A> + 'e, IB: Iterator<Item=B> + 'e {
+        GreedyZip {
+            a: Box::new(a),
+            b: Box::new(b),
+        }
+    }
+
+}
+
+impl<'d, A, B> Iterator for GreedyZip<'d, A, B> {
+    type Item = (Option<A>, Option<B>);
+
+    fn next(&mut self) -> Option<(Option<A>, Option<B>)> {
+        match (self.a.next(), self.b.next()) {
+            (Some(a), Some(b)) => Some((Some(a), Some(b))),
+            (Some(a), None) => Some((Some(a), None)),
+            (None, Some(b)) => Some((None, Some(b))),
+            (None, None) => None,
+        }
+    }
+
+}
+
 fn test_kind(kind: &str, glob: &str) -> bool {
-    let mut kit = kind.chars();
-    let mut git = glob.chars();
-    loop {
-        // Manual zip
-        match (kit.next(), git.next()) {
+    let mut it = GreedyZip::new(kind.chars(), glob.chars());
+    for o in it {
+        match o {
             (Some(kch), Some(gch)) => {
                 if gch == '*' {
                     // Rest of glob does not matter.
@@ -22,12 +54,11 @@ fn test_kind(kind: &str, glob: &str) -> bool {
                     return false;
                 }
             }
-            // Both iterators reached the end at the same time.
-            (None, None) => return true,
             // (Some,None) or (None,Some) means no match.
             _ => return false,
         }
     }
+    true
 }
 
 #[cfg(test)]
