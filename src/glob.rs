@@ -14,7 +14,9 @@ impl FromStr for Glob {
     type Err = GlobError;
 
     fn from_str(glob: &str) -> Result<Self, GlobError> {
-        if glob == "*" {
+        if glob.is_empty() {
+            Err(GlobError(glob.to_string()))
+        } else if glob == "*" {
             Ok(Glob::MatchAll)
         } else if glob.contains("*") {
             if glob.ends_with("/*") {
@@ -82,6 +84,11 @@ mod tests {
         assert!(GlobSet::from_globs(&["oops/*/fail/*"]).is_err());
         assert!(GlobSet::from_globs(&["oops*"]).is_err());
         assert!(GlobSet::from_globs(&["f*il/oops/*"]).is_err());
+    }
+
+    #[test]
+    fn test_from_globs_empty_str_invalid() {
+        assert!(GlobSet::from_globs(&[""]).is_err());
     }
 
     #[test]
