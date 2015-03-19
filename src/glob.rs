@@ -68,6 +68,23 @@ mod tests {
     use test::Bencher;
 
     #[test]
+    fn test_from_globs_valid() {
+        assert!(GlobSet::from_globs(&[
+            "*",
+            "foo/bar",
+            "foo/qux/*",
+        ]).is_ok());
+    }
+
+    #[test]
+    fn test_from_globs_single_invalid() {
+        assert!(GlobSet::from_globs(&["oops/*/fail"]).is_err());
+        assert!(GlobSet::from_globs(&["oops/*/fail/*"]).is_err());
+        assert!(GlobSet::from_globs(&["oops*"]).is_err());
+        assert!(GlobSet::from_globs(&["f*il/oops/*"]).is_err());
+    }
+
+    #[test]
     fn test_single_match_all() {
         let gs = GlobSet::from_globs(&["*"]).unwrap();
         assert!(gs.match_kind("po/ta/to"));
