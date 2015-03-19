@@ -1,5 +1,5 @@
 #![feature(old_io, old_path)]
-#![feature(core, collections)]
+#![feature(core)]
 #![feature(test)]
 #![allow(dead_code, deprecated)]
 

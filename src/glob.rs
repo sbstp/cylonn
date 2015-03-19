@@ -1,4 +1,7 @@
-use std::str::Pattern;
+use std::str::{FromStr, Pattern};
+
+#[derive(Debug)]
+pub struct GlobError(String);
 
 #[derive(Debug)]
 enum Glob {
@@ -7,8 +10,28 @@ enum Glob {
     MatchExact(String),
 }
 
-#[derive(Debug)]
-pub struct GlobError(String);
+impl FromStr for Glob {
+    type Err = GlobError;
+
+    fn from_str(glob: &str) -> Result<Self, GlobError> {
+        if glob == "*" {
+            Ok(Glob::MatchAll)
+        } else if glob.contains("*") {
+            if glob.ends_with("/*") {
+                let prefix = &glob[..(glob.len() - 1)];
+                if prefix.contains("*") {
+                    Err(GlobError(glob.to_string()))
+                } else {
+                    Ok(Glob::MatchPrefix(prefix.to_string()))
+                }
+            } else {
+                Err(GlobError(glob.to_string()))
+            }
+        } else {
+            Ok(Glob::MatchExact(glob.to_string()))
+        }
+    }
+}
 
 #[derive(Debug)]
 pub struct GlobSet {
@@ -16,7 +39,7 @@ pub struct GlobSet {
 }
 
 impl GlobSet {
-    fn from_globs(globs: &[&str]) -> Result<GlobSet, GlobError> {
+    fn from_globs(globs: &[&str]) -> Result<Self, GlobError> {
         let mut gs = GlobSet{globs: Vec::new()};
         for glob in globs {
             try!(gs.add_glob(glob));
@@ -35,22 +58,7 @@ impl GlobSet {
     }
 
     fn add_glob(&mut self, glob: &str) -> Result<(), GlobError> {
-        if glob == "*" {
-            Ok(self.globs.push(Glob::MatchAll))
-        } else if glob.contains("*") {
-            if glob.ends_with("/*") {
-                let prefix = glob.slice_to(glob.len() - 1);
-                if prefix.contains("*") {
-                    Err(GlobError(glob.to_string()))
-                } else {
-                    Ok(self.globs.push(Glob::MatchPrefix(prefix.to_string())))
-                }
-            } else {
-                Err(GlobError(glob.to_string()))
-            }
-        } else {
-            Ok(self.globs.push(Glob::MatchExact(glob.to_string())))
-        }
+        Ok(self.globs.push(try!(FromStr::from_str(glob))))
     }
 }
 
