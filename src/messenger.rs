@@ -29,8 +29,7 @@ pub fn broadcast(receiver: Receiver<Message>) {
     let mut clients: HashMap<u32, Client> = HashMap::new();
 
     // Await for events.
-    // TODO: handle errors
-    while let Ok(message) = receiver.recv() {
+    for message in receiver.iter() {
         match message.event {
             Event::Line(line) => {
                 for (client_id, client) in clients.iter_mut() {

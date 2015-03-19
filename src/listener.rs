@@ -6,6 +6,8 @@ use std::sync::mpsc::{self, Sender, Receiver};
 
 use uuid::Uuid;
 
+use serialize::json::Json;
+
 // Handy class to generate messages.
 struct Builder {
     client_id: u32,
@@ -43,18 +45,67 @@ pub enum Event {
     Stream(UnixStream),
 }
 
+#[derive(Debug)]
+struct Template {
+    id: String,
+    kind: String,
+    params: Json,
+}
+
+impl Template {
+
+    fn from_json(json: Json) -> Option<Template> {
+        let id = match json.find("id").map(|id| id.as_string()) {
+            None => return None,
+            Some(id) => id,
+        };
+        let kind = match json.find("kind").map(|kind| kind.as_string()) {
+            None => return None,
+            Some(kind) => kind,
+        };
+        let params = match json.find("params") {
+            None => return None,
+            Some(params) => params,
+        };
+        
+        Template {
+            id: id,
+            kind: kind,
+            params: params,
+        }
+    }
+
+}
+
 // Handle a new socket.
 fn handle(id: u32, sock: UnixStream, sender: Sender<Message>) {
     let builder = Builder::new(id);
     let mut reader = BufferedReader::new(sock.clone());
-    // TODO: use Result of send() call
-    sender.send(builder.stream(sock.clone()));
+    // // TODO: use Result of send() call
+    // sender.send(builder.stream(sock.clone()));
 
-    // TODO: handle errors
-    while let Ok(line) = reader.read_line() {
-        // TODO: use Result of send() call
-        sender.send(builder.line(line));
+    // wait for handshake
+    loop {
+        let res = reader.read_line();
+        let line = match res {
+            // TODO better handling
+            Err(_) => return,
+            Ok(line) => line,
+        };
+        let json: Template = match json::decode(&line[..]) {
+            // TODO better handling
+            Err(_) => return,
+            Ok(json) => json,
+        };
+        println!("{:?}", json);
     }
+
+
+    // // TODO: handle errors
+    // while let Ok(line) = reader.read_line() {
+    //     // TODO: use Result of send() call
+    //     sender.send(builder.line(line));
+    // }
 }
 
 // Accept sockets creating a thread for each new socket.
