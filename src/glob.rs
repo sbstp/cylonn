@@ -87,6 +87,16 @@ mod tests {
     }
 
     #[test]
+    fn test_from_globs_multi_invalid() {
+        assert!(GlobSet::from_globs(&[
+            "aaa",
+            "bbb",
+            "i/ve/fallen/*/and/i/can/t/get/up",
+            "ddd",
+        ]).is_err());
+    }
+
+    #[test]
     fn test_from_globs_empty_str_invalid() {
         assert!(GlobSet::from_globs(&[""]).is_err());
     }
