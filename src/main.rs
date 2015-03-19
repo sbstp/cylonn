@@ -12,7 +12,7 @@ extern crate test;
 mod init;
 mod listener;
 mod messenger;
-mod matcher;
+mod glob;
 mod plugin;
 
 fn main() {
