@@ -42,7 +42,9 @@ pub struct GlobSet {
 
 impl GlobSet {
     fn from_globs(globs: &[&str]) -> Result<Self, GlobError> {
-        let mut gs = GlobSet{globs: Vec::new()};
+        let mut gs = GlobSet{
+            globs: Vec::with_capacity(globs.len()),
+        };
         for glob in globs {
             try!(gs.add_glob(glob));
         }
