@@ -11,6 +11,7 @@ extern crate test;
 
 pub mod glob;
 mod init;
+mod json;
 mod listener;
 mod messenger;
 mod plugin;
