@@ -15,3 +15,16 @@ macro_rules! some_or_return {
         }
     };
 }
+
+/// Macro to easily implement FromError.
+/// from_error!(MyError, IoError, MyError::IoError)
+macro_rules! from_error {
+    ( $t:ty, $err:ty, $name:path ) => {
+        use std;
+        impl std::error::FromError<$err> for $t {
+            fn from_error(err: $err) -> $t {
+                $name(err)
+            }
+        }
+    }
+}
