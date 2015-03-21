@@ -1,12 +1,24 @@
+//! Cylonn's implementation of kind matching (globbing).
+//!
+//! Kind matching is used to filter message kinds, letting plugins choose what
+//! kind of messages to receive from the messenger.
+
 use std::str::{FromStr, Pattern};
 
+/// The error type for glob parsing.
+///
+/// GlobError will contain the glob that caused an error, as a String.
 #[derive(Debug)]
-pub struct GlobError(String);
+pub struct GlobError(pub String);
 
+/// Represents a parsed glob.
 #[derive(Debug)]
-enum Glob {
+pub enum Glob {
+    /// Equivalent to `*`. Matches any kind.
     MatchAll,
+    /// Equivalent to `example/*`. Matches kinds starting with `example/`.
     MatchPrefix(String),
+    /// Equivalent to `example/kind`. Only matches `example/kind`.
     MatchExact(String),
 }
 
@@ -35,13 +47,20 @@ impl FromStr for Glob {
     }
 }
 
+/// A set of glob rules.
+///
+/// The glob set is the main abstraction for interacting with globs at a plugin
+/// level.
 #[derive(Debug)]
 pub struct GlobSet {
     globs: Vec<Glob>,
 }
 
 impl GlobSet {
-    fn from_globs(globs: &[&str]) -> Result<Self, GlobError> {
+    /// Creates a `GlobSet` from a list of glob strings.
+    ///
+    /// This function will return a GlobError if any glob string is invalid.
+    pub fn from_globs(globs: &[&str]) -> Result<Self, GlobError> {
         let mut gs = GlobSet{
             globs: Vec::with_capacity(globs.len()),
         };
@@ -51,7 +70,8 @@ impl GlobSet {
         Ok(gs)
     }
 
-    fn match_kind(&self, kind: &str) -> bool {
+    /// Checks if `kind` matches any of the globs in the set.
+    pub fn match_kind(&self, kind: &str) -> bool {
         self.globs.iter().any(|g| {
             match *g {
                 Glob::MatchAll => true,
@@ -61,7 +81,12 @@ impl GlobSet {
         })
     }
 
-    fn add_glob(&mut self, glob: &str) -> Result<(), GlobError> {
+    /// Adds a glob to the set.
+    ///
+    /// The glob string will be parsed into a `Glob` using `from_str`.
+    ///
+    /// This function will return a GlobError if the glob string is invalid.
+    pub fn add_glob(&mut self, glob: &str) -> Result<(), GlobError> {
         Ok(self.globs.push(try!(FromStr::from_str(glob))))
     }
 }
