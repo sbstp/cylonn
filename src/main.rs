@@ -1,5 +1,5 @@
-#![feature(old_io, old_path)]
 #![feature(core)]
+#![feature(old_io, old_path)]
 #![feature(test)]
 #![allow(dead_code, deprecated)]
 
@@ -9,10 +9,10 @@ extern crate uuid;
 #[cfg(test)]
 extern crate test;
 
+pub mod glob;
 mod init;
 mod listener;
 mod messenger;
-pub mod glob;
 mod plugin;
 
 fn main() {
