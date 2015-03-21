@@ -27,21 +27,27 @@ impl FromStr for Glob {
 
     fn from_str(glob: &str) -> Result<Self, GlobError> {
         if glob.is_empty() {
+            // An empty glob doesn't make sense. Reject.
             Err(GlobError(glob.to_string()))
         } else if glob == "*" {
+            // The glob is a wildcard. Match all kinds.
             Ok(Glob::MatchAll)
         } else if glob.contains("*") {
             if glob.ends_with("/*") {
                 let prefix = &glob[..(glob.len() - 1)];
                 if prefix.contains("*") {
+                    // More than one asterisk is present. Reject.
                     Err(GlobError(glob.to_string()))
                 } else {
+                    // The glob is a kind prefix. Match kinds starting with it.
                     Ok(Glob::MatchPrefix(prefix.to_string()))
                 }
             } else {
+                // The asterisk is not at the end and after a slash. Reject.
                 Err(GlobError(glob.to_string()))
             }
         } else {
+            // The glob is just a kind. Match exactly that kind.
             Ok(Glob::MatchExact(glob.to_string()))
         }
     }
